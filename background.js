@@ -1,0 +1,1 @@
+chrome.tabs.create({ url: 'https://www.youtube.com/feed/history', active: false });

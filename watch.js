@@ -1,6 +1,6 @@
 let cleanup = null;
 function init() {
-    console.log("YouTube stats initialized.")
+    console.log("YouTube stats initialized.");
     const videoId = new URLSearchParams(window.location.search).get("v");
     if (!videoId) return;
 

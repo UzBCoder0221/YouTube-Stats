@@ -8,10 +8,16 @@
     "default_popup": "popup.html",
     "default_icon": "icons/icon.png"
   },
-  "content_scripts": [{
-    "matches": ["*://*.youtube.com/watch*"],
-    "js": ["content.js"]
-  }],
+  "content_scripts": [
+    {
+      "matches": ["*://*.youtube.com/watch*"],
+      "js": ["watch.js"]
+    },
+    {
+      "matches": ["*://*.youtube.com/feed/history*"],
+      "js": ["history.js"]
+    }
+  ],
   "background": {
     "service_worker": "background.js"
   }
