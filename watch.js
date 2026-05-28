@@ -62,6 +62,24 @@ new MutationObserver(() => {
     }
 }).observe(document.body, { childList: true, subtree: true });
 
+setInterval(() => {
+    if (location.href !== lastUrl) {
+        lastUrl = location.href;
+        init();
+        return;
+    }
+
+    // Mini player / playlist next button — has the upcoming video's href
+    const nextBtn = document.querySelector(".ytp-next-button.ytp-button.ytp-playlist-ui");
+    if (nextBtn && nextBtn.href) {
+        const nextVideoId = new URL(nextBtn.href).searchParams.get("v");
+        if (nextVideoId && nextVideoId !== lastVideoId) {
+            lastVideoId = nextVideoId;
+            init(nextVideoId);
+        }
+    }
+}, 1000);
+
 window.addEventListener('beforeunload', () => {
     if (cleanup) cleanup();
 });
