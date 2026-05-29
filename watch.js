@@ -1,8 +1,10 @@
-let cleanup = null;
+let cleanup = null; 
+let lastVideoId = null;
 function init() {
     console.log("YouTube stats initialized.");
     const videoId = new URLSearchParams(window.location.search).get("v");
-    if (!videoId) return;
+    if (!videoId || videoId === lastVideoId) return;
+    lastVideoId = videoId;
 
     // Clean up previous video's listeners before starting new one
     if (cleanup) cleanup();
@@ -60,7 +62,10 @@ new MutationObserver(() => {
         lastUrl = location.href;
         init(); // reinitialize for new video
     }
-}).observe(document.body, { childList: true, subtree: true });
+    a=document.querySelectorAll("#items").children;
+    a.forEach((i)=>{if (i.selected) i.children[0].href}); // playlist items
+    // id="microformat"
+}).observe(document.body, { childList: true, attributes: true, characterData: true, subtree: true });
 
 setInterval(() => {
     if (location.href !== lastUrl) {
