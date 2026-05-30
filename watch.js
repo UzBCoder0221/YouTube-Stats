@@ -1,12 +1,30 @@
 let cleanup = null; 
 let lastVideoId = null;
+
+function getStorageKey() {
+    const miniplayer = document.querySelector('ytd-miniplayer');
+    const isActive = miniplayer && miniplayer.hasAttribute('active');
+    const isVisible = miniplayer && window.getComputedStyle(miniplayer).display !== 'none';
+    
+    if (isActive || isVisible) {
+        return "miniplayer";
+    }
+
+    const shortsMatch = location.pathname.match(/\/shorts\/([a-zA-Z0-9_-]+)/);
+    if (shortsMatch) {
+        return shortsMatch[1];
+    }
+    
+    const videoId = new URLSearchParams(window.location.search).get("v");
+    return videoId;
+}
+
 function init() {
     console.log("YouTube stats initialized.");
-    const videoId = new URLSearchParams(window.location.search).get("v");
-    if (!videoId || videoId === lastVideoId) return;
-    lastVideoId = videoId;
+    const key = getStorageKey();
+    if (!key || key === lastVideoId) return;
+    lastVideoId = key;
 
-    // Clean up previous video's listeners before starting new one
     if (cleanup) cleanup();
 
     let accumulatedTime = 0;
@@ -14,8 +32,8 @@ function init() {
     let intervalId = null;
     let video = null;
 
-    chrome.storage.local.get(videoId, (res) => {
-        accumulatedTime = res[videoId] ?? 0;
+    chrome.storage.local.get(key, (res) => {
+        accumulatedTime = res[key] ?? 0;
     });
 
     function flush() {
@@ -23,9 +41,14 @@ function init() {
             accumulatedTime += (Date.now() - playStartTime) / 1000;
             playStartTime = Date.now();
         }
-        chrome.storage.local.set({ [videoId]: accumulatedTime }, () => {
-            console.log(`[${videoId}] Watch time saved: ${Math.round(accumulatedTime)}s`);
-        });
+        try {
+            chrome.storage.local.set({ [key]: accumulatedTime }, () => {
+                if (chrome.runtime.lastError) return;
+                console.log(`[${key}] Watch time saved: ${Math.round(accumulatedTime)}s`);
+            });
+        } catch (e) {
+            clearInterval(intervalId);
+        }
     }
 
     function onPlay() { playStartTime = Date.now(); }
@@ -42,11 +65,12 @@ function init() {
         video.addEventListener('play', onPlay);
         video.addEventListener('pause', onPause);
         intervalId = setInterval(flush, 5000);
+    }).catch(() => {
+        // Video not found, could be mini player without video loaded yet
     });
 
-    // Return cleanup function for when next video starts
     cleanup = () => {
-        flush(); // save before leaving
+        flush();
         if (video) {
             video.removeEventListener('play', onPlay);
             video.removeEventListener('pause', onPause);
@@ -55,17 +79,13 @@ function init() {
     };
 }
 
-// Watch for YouTube SPA navigation
 let lastUrl = location.href;
 new MutationObserver(() => {
     if (location.href !== lastUrl) {
         lastUrl = location.href;
-        init(); // reinitialize for new video
+        init();
     }
-    a=document.querySelectorAll("#items").children;
-    a.forEach((i)=>{if (i.selected) i.children[0].href}); // playlist items
-    // id="microformat"
-}).observe(document.body, { childList: true, attributes: true, characterData: true, subtree: true });
+}).observe(document.body, { childList: true, subtree: true });
 
 setInterval(() => {
     if (location.href !== lastUrl) {
@@ -74,14 +94,10 @@ setInterval(() => {
         return;
     }
 
-    // Mini player / playlist next button — has the upcoming video's href
-    const nextBtn = document.querySelector(".ytp-next-button.ytp-button.ytp-playlist-ui");
-    if (nextBtn && nextBtn.href) {
-        const nextVideoId = new URL(nextBtn.href).searchParams.get("v");
-        if (nextVideoId && nextVideoId !== lastVideoId) {
-            lastVideoId = nextVideoId;
-            init(nextVideoId);
-        }
+    // Check if mini player status changed
+    const currentKey = getStorageKey();
+    if (currentKey && currentKey !== lastVideoId) {
+        init();
     }
 }, 1000);
 
@@ -89,7 +105,6 @@ window.addEventListener('beforeunload', () => {
     if (cleanup) cleanup();
 });
 
-// Run on initial load
 init();
 
 function waitForElement(selector, timeout = 7000) {
@@ -104,41 +119,3 @@ function waitForElement(selector, timeout = 7000) {
         setTimeout(() => { observer.disconnect(); reject("Timeout"); }, timeout);
     });
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Find the element currently in focus, or default to the body
-const targetElement = document.activeElement || document.body;
-
-// Create the keyboard event sequence
-const keydownEvent = new KeyboardEvent('keydown', {
-    key: 'i',
-    code: 'KeyI',
-    keyCode: 73,
-    which: 73,
-    bubbles: true,
-    cancelable: true
-});
-
-const keyupEvent = new KeyboardEvent('keyup', {
-    key: 'i',
-    code: 'KeyI',
-    keyCode: 73,
-    which: 73,
-    bubbles: true,
-    cancelable: true
-});
-
-// Dispatch the events to simulate the press and release
-targetElement.dispatchEvent(keydownEvent);
-targetElement.dispatchEvent(keyupEvent);
