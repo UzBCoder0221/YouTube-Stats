@@ -104,3 +104,41 @@ function waitForElement(selector, timeout = 7000) {
         setTimeout(() => { observer.disconnect(); reject("Timeout"); }, timeout);
     });
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+// Find the element currently in focus, or default to the body
+const targetElement = document.activeElement || document.body;
+
+// Create the keyboard event sequence
+const keydownEvent = new KeyboardEvent('keydown', {
+    key: 'i',
+    code: 'KeyI',
+    keyCode: 73,
+    which: 73,
+    bubbles: true,
+    cancelable: true
+});
+
+const keyupEvent = new KeyboardEvent('keyup', {
+    key: 'i',
+    code: 'KeyI',
+    keyCode: 73,
+    which: 73,
+    bubbles: true,
+    cancelable: true
+});
+
+// Dispatch the events to simulate the press and release
+targetElement.dispatchEvent(keydownEvent);
+targetElement.dispatchEvent(keyupEvent);
