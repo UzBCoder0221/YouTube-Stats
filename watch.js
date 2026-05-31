@@ -6,14 +6,18 @@ function getStorageKey() {
     const isActive = miniplayer && miniplayer.hasAttribute('active');
     const isVisible = miniplayer && window.getComputedStyle(miniplayer).display !== 'none';
     
-    if (isActive || isVisible) {
-        return "miniplayer";
-    }
-
     const shortsMatch = location.pathname.match(/\/shorts\/([a-zA-Z0-9_-]+)/);
     if (shortsMatch) {
         return shortsMatch[1];
     }
+
+    if (isVisible || isActive) {
+        const miniplayerVideo = miniplayer?.querySelector('video');
+        if (miniplayerVideo && !miniplayerVideo.paused) {
+            return "miniplayer";
+        }
+    }
+
     
     const videoId = new URLSearchParams(window.location.search).get("v");
     return videoId;
@@ -31,12 +35,18 @@ function init() {
     let playStartTime = null;
     let intervalId = null;
     let video = null;
+    let storageReady = false;
 
+    // Load saved time first, THEN set up listeners
     chrome.storage.local.get(key, (res) => {
         accumulatedTime = res[key] ?? 0;
+        storageReady = true;
+        console.log(`[${key}] Loaded: ${Math.round(accumulatedTime)}s`);
     });
 
     function flush() {
+        if (!storageReady) return; // don't flush until storage is loaded
+        
         if (playStartTime) {
             accumulatedTime += (Date.now() - playStartTime) / 1000;
             playStartTime = Date.now();
@@ -59,14 +69,14 @@ function init() {
         }
     }
 
-    waitForElement("video.video-stream.html5-main-video").then(v => {
+    waitForElement("video").then(v => { // video.video-stream.html5-main-video
         video = v;
         if (!video.paused) playStartTime = Date.now();
         video.addEventListener('play', onPlay);
         video.addEventListener('pause', onPause);
         intervalId = setInterval(flush, 5000);
     }).catch(() => {
-        // Video not found, could be mini player without video loaded yet
+        // Video not found
     });
 
     cleanup = () => {
@@ -83,6 +93,11 @@ let lastUrl = location.href;
 new MutationObserver(() => {
     if (location.href !== lastUrl) {
         lastUrl = location.href;
+        init();
+    }
+
+    const currentKey = getStorageKey();
+    if (currentKey && currentKey !== lastVideoId) {
         init();
     }
 }).observe(document.body, { childList: true, subtree: true });
@@ -109,7 +124,9 @@ init();
 
 function waitForElement(selector, timeout = 7000) {
     return new Promise((resolve, reject) => {
-        const el = document.querySelector(selector);
+        const els = document.querySelectorAll(selector);
+        let el = els[0];
+        els.forEach((i) => {!!(i.currentTime > 0 && !i.paused && !i.ended && i.readyState > 2) && (el=i)})
         if (el) return resolve(el);
         const observer = new MutationObserver(() => {
             const el = document.querySelector(selector);
