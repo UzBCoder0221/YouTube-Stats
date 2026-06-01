@@ -5,7 +5,7 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      width: 280px;
+      width: 320px;
       font-family: system-ui, sans-serif;
       background: #fff;
       color: #111;
@@ -39,6 +39,43 @@
     }
     .total .label { font-size: 12px; color: #888; margin-bottom: 4px; }
     .total .value { font-size: 15px; font-weight: 500; }
+    
+    .section-title {
+      font-size: 13px;
+      font-weight: 500;
+      margin-top: 16px;
+      margin-bottom: 8px;
+      padding-top: 12px;
+      border-top: 0.5px solid #e0e0e0;
+    }
+    
+    .scraped-section {
+      background: #fffbf0;
+      border: 0.5px solid #ffd699;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .scraped-section .label { font-size: 11px; color: #666; margin-bottom: 4px; }
+    .scraped-section .value { font-size: 18px; font-weight: 500; color: #ff9800; }
+    .scraped-section .desc { font-size: 11px; color: #888; margin-top: 4px; }
+    
+    .confidence-slider {
+      margin: 12px 0;
+      padding: 12px;
+      background: #f5f5f5;
+      border-radius: 8px;
+    }
+    .confidence-slider label { font-size: 12px; color: #666; display: block; margin-bottom: 8px; }
+    .confidence-slider input { width: 100%; }
+    .confidence-value { font-size: 14px; font-weight: 500; color: #ff9800; text-align: center; margin-top: 8px; }
+    
+    .button-group {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    
     .footer {
       border-top: 0.5px solid #e0e0e0;
       padding-top: 12px;
@@ -47,15 +84,31 @@
       align-items: center;
     }
     .footer span { font-size: 12px; color: #888; }
+    
     button {
       font-size: 12px;
-      padding: 4px 10px;
+      padding: 6px 12px;
       border-radius: 6px;
       border: 0.5px solid #ccc;
       background: transparent;
       cursor: pointer;
+      flex: 1;
     }
     button:hover { background: #f0f0f0; }
+    button.primary {
+      background: #ff9800;
+      color: white;
+      border: none;
+    }
+    button.primary:hover { background: #f57c00; }
+    button.danger {
+      background: #ffebee;
+      color: #c62828;
+      border: 0.5px solid #c62828;
+    }
+    button.danger:hover { background: #ffcdd2; }
+    
+    .hidden { display: none; }
   </style>
 </head>
 <body>
@@ -65,6 +118,7 @@
     <span>Watch time tracker</span>
   </div>
 
+  <!-- Tracked Time Section -->
   <div class="grid">
     <div class="card"><div class="label">Days</div><div class="value" id="days">0</div></div>
     <div class="card"><div class="label">Hours</div><div class="value" id="hours">0</div></div>
@@ -77,6 +131,33 @@
   <div class="total">
     <div class="label">Total in hours</div>
     <div class="value" id="totalHours">0 hrs</div>
+  </div>
+
+  <!-- Scraped History Section -->
+  <div id="scrapedSection" class="hidden">
+    <div class="section-title">📊 Scraped History (Pending)</div>
+    
+    <div class="scraped-section">
+      <div class="label">Scraped watched time</div>
+      <div class="value" id="scrapedTotal">0 hrs</div>
+      <div class="desc" id="scrapedDesc">0 videos found</div>
+    </div>
+
+    <div class="confidence-slider">
+      <label>How confident are you that you actually watched this much?</label>
+      <input type="range" id="confidenceSlider" min="0" max="100" value="80">
+      <div class="confidence-value"><span id="confidenceValue">80</span>%</div>
+    </div>
+
+    <div class="total">
+      <div class="label">Adjusted watch time</div>
+      <div class="value" id="adjustedTotal">0 hrs</div>
+    </div>
+
+    <div class="button-group">
+      <button class="primary" id="approveBtn">✓ Approve & Add</button>
+      <button class="danger" id="rejectBtn">✗ Discard</button>
+    </div>
   </div>
 
   <div class="footer">
