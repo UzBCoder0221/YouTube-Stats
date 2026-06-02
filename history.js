@@ -4,9 +4,11 @@ let collectedData = null;
 function scrapeWatchHistory() {
     const videos = [];
     
-    const lockups = document.querySelectorAll('yt-lockup-view-model:not([data-scraped])');
-    console.log(`📦 Found ${lockups.length} NEW lockups to scrape`);
+    // const lockups = document.querySelectorAll('yt-lockup-view-model:not([data-scraped])');
+    const lockups = document.querySelectorAll('yt-lockup-view-model');
     
+    console.log(`📦 Found ${lockups.length} NEW lockups to scrape`);
+    var all = lockups.length, deleted = 0;
     lockups.forEach((lockup) => {
         const link = lockup.querySelector('a[href*="/watch?v="]');
         if (!link) return;
@@ -26,17 +28,27 @@ function scrapeWatchHistory() {
             
             videos.push({
                 id: videoId,
-                url: link.href,
                 duration: duration,
                 durationSeconds: durationSeconds,
                 progressPercent: progressPercent,
                 trackedSeconds: watchedSeconds
             });
-            
-            lockup.setAttribute('data-scraped', 'true');
+            lockup.remove();
+            deleted++;
         }
     });
-    
+    const reels = document.querySelectorAll("ytd-reel-shelf-renderer");
+    reels.forEach((e) => { e.remove() });
+    const dates = document.querySelectorAll("ytd-item-section-header-renderer");
+    dates.forEach((e) => { e.remove() });
+    const big_reels = document.querySelectorAll("ytd-video-renderer");
+    big_reels.forEach((e) => { e.remove() });
+    while (!!reels || !!dates || !!big_reels) {
+        if (reels.length > 0) reels[0]?.remove();
+        if (dates.length > 0) dates[0]?.remove();
+        if (big_reels.length > 0) big_reels[0]?.remove();
+    }
+    console.log("All was: ", all, "; Deleted: ", (deleted) && (deleted + 1));
     return videos;
 }
 
@@ -64,14 +76,14 @@ async function collectAllWatchHistory() {
     let allVideos = [];
     let noNewStrikes = 0;
     let scrollPass = 0;
-    const batchCounts = [];
 
-    while (noNewStrikes < 5 && !globalStopFlag) {
+    while (noNewStrikes < 10 && !globalStopFlag) {
         scrollPass++;
         
         const videosBefore = scrapeWatchHistory();
         let newVideosThisPass = 0;
         
+        // sum time
         videosBefore.forEach(v => {
             if (!seenIds.has(v.id)) {
                 seenIds.add(v.id);
@@ -81,26 +93,13 @@ async function collectAllWatchHistory() {
         });
         
         console.log(`📜 Pass ${scrollPass}: Scraped ${newVideosThisPass} new, Total: ${seenIds.size}`);
-        batchCounts.push(newVideosThisPass);
-        
-        if (batchCounts.length > 4) {
-            const oldestBatchCount = batchCounts.shift();
-            const scrapedLockups = document.querySelectorAll('yt-lockup-view-model[data-scraped]');
-            
-            let deleted = 0;
-            for (let i = 0; i < scrapedLockups.length && deleted < oldestBatchCount; i++) {
-                scrapedLockups[i].remove();
-                deleted++;
-            }
-            console.log(`🧹 Deleted ${deleted} old elements from batch 1, DOM now has ${document.querySelectorAll('yt-lockup-view-model').length} lockups`);
-        }
         
         window.scrollTo(0, document.documentElement.scrollHeight);
-        await new Promise(r => setTimeout(r, 2000));
+        await new Promise(r => setTimeout(r, 3000 + noNewStrikes * 1000));
 
         if (newVideosThisPass === 0) {
             noNewStrikes++;
-            console.log(`⚠️  Strike ${noNewStrikes}/5`);
+            console.log(`⚠️  Strike ${noNewStrikes}/10`);
         } else {
             noNewStrikes = 0;
         }
@@ -110,6 +109,7 @@ async function collectAllWatchHistory() {
     const totalSeconds = allVideos.reduce((sum, v) => sum + v.trackedSeconds, 0);
     console.log(`📊 Total tracked time: ${secondsToTime(totalSeconds)}`);
     
+    // read then update
     collectedData = allVideos;
     let now = new Date().toDateString();
     let data = {"scrapedData": {
@@ -120,11 +120,10 @@ async function collectAllWatchHistory() {
             }
         }
     }
-    chrome.storage.local.set(data, (response) => {
+    chrome.storage.local.set(data, () => {
         console.log("✅ Data sent to popup");
     });
-    
-    return allVideos;
+    return;
 }
 
 collectAllWatchHistory();

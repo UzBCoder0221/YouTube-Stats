@@ -3,7 +3,7 @@
   "name": "YouTube stats",
   "version": "1.0",
   "description": "...",
-  "permissions": ["activeTab", "storage"],
+  "permissions": ["activeTab", "storage", "declarativeNetRequest"],
   "action": {
     "default_popup": "popup.html",
     "default_icon": "icons/icon.png"
