@@ -39,7 +39,7 @@ function init() {
     let video = null;
     let storageReady = false;
 
-    chrome.storage.local.get(key, (res) => {
+    YTStorage.get(key, (res) => {
         accumulatedTime = res[key] ?? 0;
         storageReady = true;
         console.log(`✅ [${key}] Loaded: ${Math.round(accumulatedTime)}s`);
@@ -53,7 +53,7 @@ function init() {
             playStartTime = Date.now();
         }
         try {
-            chrome.storage.local.set({ [key]: accumulatedTime }, () => {
+            YTStorage.set({ [key]: accumulatedTime }, () => {
                 if (chrome.runtime.lastError) return;
                 console.log(`💾 [${key}] Saved: ${Math.round(accumulatedTime)}s`);
             });

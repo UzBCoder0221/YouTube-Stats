@@ -120,7 +120,7 @@ async function collectAllWatchHistory() {
             }
         }
     }
-    chrome.storage.local.set(data, () => {
+    YTStorage.set(data, () => {
         console.log("✅ Data sent to popup");
     });
     return;

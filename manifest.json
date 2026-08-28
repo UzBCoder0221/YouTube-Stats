@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "YouTube stats",
+  "name": "YouTube Stats",
   "version": "1.0",
-  "description": "...",
-  "permissions": ["activeTab", "storage", "declarativeNetRequest"],
+  "description": "Track your YouTube watch time across videos and sessions. Monitors playback in real-time, scrapes your watch history with progress bars, and syncs your data across devices via Chrome Sync.",
+  "permissions": ["activeTab", "storage", "syncStorage", "declarativeNetRequest"],
   "action": {
     "default_popup": "popup.html",
     "default_icon": "icons/icon.png"
@@ -11,11 +11,11 @@
   "content_scripts": [
     {
       "matches": ["*://*.youtube.com/*"],
-      "js": ["watch.js"]
+      "js": ["storage.js", "watch.js"]
     },
     {
       "matches": ["*://*.youtube.com/feed/history*"],
-      "js": ["history.js"]
+      "js": ["storage.js", "history.js"]
     }
   ],
   "background": {
